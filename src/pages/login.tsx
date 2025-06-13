@@ -55,7 +55,7 @@ const Login = () => {
         sessionStorage.setItem('userId', users.id.toString());
         sessionStorage.setItem('user', JSON.stringify(userData));
         
-        navigate('/admin');
+        navigate('/adminHome');
       } else if (users && users.role !== 'admin') {
         setError('Access denied. Admin privileges required.');
       } else {
