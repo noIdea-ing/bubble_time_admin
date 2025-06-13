@@ -7,12 +7,13 @@ interface MenuItem {
   name: string;
   price: number;
   category_id: string;
+  admin_id?: string; // Added admin_id
 }
-
 
 interface CategoryWithItems {
   id: string;
   name: string;
+  admin_id?: string; // Added admin_id
   items: MenuItem[];
 }
 
@@ -51,6 +52,16 @@ const AdminHome: React.FC = () => {
   const [updateItemPrice, setUpdateItemPrice] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
 
+  // Helper function to get admin ID from session storage
+  const getAdminId = (): string | null => {
+    const userId = sessionStorage.getItem('userId');
+    if (!userId) {
+      console.error('No user ID found in session storage');
+      return null;
+    }
+    return userId;
+  };
+
   useEffect(() => {
     const fetchMenuData = async () => {
       setLoading(true);
@@ -60,7 +71,7 @@ const AdminHome: React.FC = () => {
         // Fetch categories
         const { data: categories, error: categoriesError } = await supabase
           .from('categories')
-          .select('id, name')
+          .select('id, name, admin_id')
           .order('name');
 
         if (categoriesError) {
@@ -70,7 +81,7 @@ const AdminHome: React.FC = () => {
         // Fetch menu items
         const { data: menuItems, error: menuItemsError } = await supabase
           .from('menuItem')
-          .select('id, name, price, category_id');
+          .select('id, name, price, category_id, admin_id');
 
         if (menuItemsError) {
           throw menuItemsError;
@@ -80,6 +91,7 @@ const AdminHome: React.FC = () => {
         const categoriesWithItemsData: CategoryWithItems[] = categories.map(category => ({
           id: category.id,
           name: category.name,
+          admin_id: category.admin_id,
           items: menuItems
             .filter(item => item.category_id === category.id)
             .sort((a, b) => a.name.localeCompare(b.name)) // Sort items by name ascending
@@ -114,17 +126,18 @@ const AdminHome: React.FC = () => {
       // Fetch categories
       const { data: categories, error: categoriesError } = await supabase
         .from('categories')
-        .select('id, name')
+        .select('id, name, admin_id')
         .order('name');
 
       const { data: menuItems, error: menuItemsError } = await supabase
         .from('menuItem')
-        .select('id, name, price, category_id');
+        .select('id, name, price, category_id, admin_id');
 
       if (!categoriesError && !menuItemsError) {
         const categoriesWithItemsData: CategoryWithItems[] = categories.map(category => ({
           id: category.id,
           name: category.name,
+          admin_id: category.admin_id,
           items: menuItems
             .filter(item => item.category_id === category.id)
             .sort((a, b) => a.name.localeCompare(b.name)) // Sort items by name ascending
@@ -159,16 +172,24 @@ const AdminHome: React.FC = () => {
       return;
     }
 
+    // Get admin ID from session storage
+    const adminId = getAdminId();
+    if (!adminId) {
+      alert('Error: Admin ID not found. Please log in again.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const {error } = await supabase
+      const { error } = await supabase
         .from('menuItem')
         .insert([
           {
             name: newItemName.trim(),
             price: price,
-            category_id: selectedCategoryId
+            category_id: selectedCategoryId,
+            admin_id: adminId // Include admin_id
           }
         ])
         .select();
@@ -254,6 +275,13 @@ const AdminHome: React.FC = () => {
       return;
     }
 
+    // Get admin ID from session storage
+    const adminId = getAdminId();
+    if (!adminId) {
+      alert('Error: Admin ID not found. Please log in again.');
+      return;
+    }
+
     setIsSubmittingCategory(true);
 
     try {
@@ -261,7 +289,8 @@ const AdminHome: React.FC = () => {
         .from('categories')
         .insert([
           {
-            name: newCategoryName.trim()
+            name: newCategoryName.trim(),
+            admin_id: adminId // Include admin_id
           }
         ])
         .select();

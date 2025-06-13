@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+// Note: This code uses plain text password comparison which is NOT secure
+// In production, you should implement proper password hashing
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -11,32 +13,49 @@ const Login = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
+      // Debug: Log the credentials being used
+      console.log('Login attempt:', {
+        email: formData.email,
+        password: formData.password
+      });
+      
       // Query the userBT table to find user with matching email and password
       const { data: users, error: queryError } = await supabase
-        .from('userBT')
+        .from('usersBT')
         .select('*')
         .eq('email', formData.email)
         .eq('password', formData.password)
         .single();
 
+      // Debug: Log the complete response
+      console.log('Supabase response:', { data: users, error: queryError });
+
       if (queryError) {
+        console.log('Query error code:', queryError.code);
+        console.log('Query error message:', queryError.message);
+        console.log('Query error details:', queryError.details);
+        console.log('Query error hint:', queryError.hint);
+        
         if (queryError.code === 'PGRST116') {
           setError('Invalid email or password');
+        } else if (queryError.code === 'PGRST301') {
+          setError('Database access denied. Please check RLS policies.');
         } else {
-          setError('Login failed. Please try again.');
+          console.error('Full query error:', queryError);
+          setError(`Login failed: ${queryError.message}`);
         }
         setLoading(false);
         return;
@@ -44,6 +63,8 @@ const Login = () => {
 
       // Check if user exists and has admin role
       if (users && users.role === 'admin') {
+        console.log('Admin login successful for:', users.email);
+        
         // Store user session data
         const userData = {
           id: users.id,
@@ -57,10 +78,13 @@ const Login = () => {
         
         navigate('/adminHome');
       } else if (users && users.role !== 'admin') {
+        console.log('User found but not admin:', users.role);
         setError('Access denied. Admin privileges required.');
       } else {
+        console.log('No user found with provided credentials');
         setError('Invalid email or password');
       }
+
     } catch (err) {
       console.error('Login error:', err);
       setError('An error occurred. Please try again.');
@@ -70,67 +94,73 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Admin Login
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to access the admin panel
-          </p>
+    <div className="container-fluid vh-100 d-flex align-items-center justify-content-center bg-light">
+      <div className="row w-100 justify-content-center">
+        <div className="col-12 col-sm-8 col-md-6 col-lg-4">
+          <div className="card shadow">
+            <div className="card-body p-4">
+              <div className="text-center mb-4">
+                <h2 className="card-title h3 fw-bold text-dark">My Bubble Time</h2>
+                <p className="text-muted">Admin Panel Login</p>
+              </div>
+              
+              <form onSubmit={handleSubmit}>
+                {error && (
+                  <div className="alert alert-danger" role="alert">
+                    {error}
+                  </div>
+                )}
+                
+                <div className="mb-3">
+                  <label htmlFor="email" className="form-label">Email address</label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    className="form-control"
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    autoComplete="email"
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label htmlFor="password" className="form-label">Password</label>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    className="form-control"
+                    placeholder="Enter your password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    autoComplete="current-password"
+                  />
+                </div>
+
+                <div className="d-grid">
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-lg"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Signing in...
+                      </>
+                    ) : (
+                      'Sign in'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </div>
-
-          <div className="text-center">
-            <Link to="/register" className="text-indigo-600 hover:text-indigo-500">
-              Need an account? Contact administrator
-            </Link>
-          </div>
-        </form>
       </div>
     </div>
   );
