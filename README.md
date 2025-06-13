@@ -1,54 +1,42 @@
-# React + TypeScript + Vite
+# My Bubble Time Cafe - Admin System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An administrative interface for managing the My Bubble Time Cafe menu items. This system allows cafe administrators to perform CRUD (Create, Read, Update, Delete) operations on menu items and categories.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Secure Admin Authentication**
+  - Email and password login system
+  - Protected routes for authenticated users only
 
-## Expanding the ESLint configuration
+- **Category Management**
+  - Create new menu categories
+  - View all existing categories 
+  - Delete categories and their associated items
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Menu Item Management**
+  - Add new menu items with names and prices
+  - View all menu items organized by categories
+  - Update existing menu item details
+  - Delete menu items
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+## Getting Started
+
+1. Clone the repository
+2. Install dependencies:
+```bash
+npm install
 ```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+## Technologies Used
+-Frontend Framework: React 19.1
+-Build Tool: Vite 6.3
+-UI Framework: Bootstrap 5.3 with React-Bootstrap
+-Database: Supabase
+-Authentication: Supabase Auth
+-State Management: React Hooks
+-Routing: React Router DOM 7.6
+-TypeScript: Version 5.8
+-Icons: Bootstrap Icons
+-Development Tools:
+-ESLint
+-TypeScript ESLint
+-React Refresh
