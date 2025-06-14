@@ -6,7 +6,7 @@ import AdminHome from './pages/AdminHome'
 import Login from './pages/login'
 
 // Define ProtectedRoute component
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const isAuthenticated = !!sessionStorage.getItem('userId');
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

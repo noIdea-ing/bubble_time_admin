@@ -8,6 +8,7 @@ interface MenuItem {
   price: number;
   category_id: string;
   admin_id?: string; // Added admin_id
+  image_url?: string;
 }
 
 interface CategoryWithItems {
@@ -52,6 +53,12 @@ const AdminHome: React.FC = () => {
   const [updateItemPrice, setUpdateItemPrice] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
 
+  // Add these new state variables for image handling
+  const [newItemImage, setNewItemImage] = useState<File | null>(null);
+  const [updateItemImage, setUpdateItemImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [updateImagePreview, setUpdateImagePreview] = useState<string>('');
+  const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
   // Helper function to get admin ID from session storage
   const getAdminId = (): string | null => {
     const userId = sessionStorage.getItem('userId');
@@ -61,6 +68,38 @@ const AdminHome: React.FC = () => {
     }
     return userId;
   };
+  
+  const uploadImage = async (file: File, itemName: string): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${itemName.replace(/\s+/g, '-')}.${fileExt}`;
+      const filePath = `menu-items/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('bubbletimeimage')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Upload error details:', uploadError); // Add this
+        throw uploadError;
+      }
+
+      return filePath;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+  };
+
+const getImageUrl = (imagePath: string | null): string => {
+  if (!imagePath) return '';
+  
+  const { data } = supabase.storage
+    .from('bubbletimeimage')
+    .getPublicUrl(imagePath);
+   console.log('Generated URL:', data.publicUrl);
+  return data.publicUrl;
+};
 
   useEffect(() => {
     const fetchMenuData = async () => {
@@ -81,7 +120,7 @@ const AdminHome: React.FC = () => {
         // Fetch menu items
         const { data: menuItems, error: menuItemsError } = await supabase
           .from('menuItem')
-          .select('id, name, price, category_id, admin_id');
+          .select('id, name, price, category_id, admin_id, image_url');
 
         if (menuItemsError) {
           throw menuItemsError;
@@ -131,7 +170,7 @@ const AdminHome: React.FC = () => {
 
       const { data: menuItems, error: menuItemsError } = await supabase
         .from('menuItem')
-        .select('id, name, price, category_id, admin_id');
+        .select('id, name, price, category_id, admin_id, image_url');
 
       if (!categoriesError && !menuItemsError) {
         const categoriesWithItemsData: CategoryWithItems[] = categories.map(category => ({
@@ -172,7 +211,6 @@ const AdminHome: React.FC = () => {
       return;
     }
 
-    // Get admin ID from session storage
     const adminId = getAdminId();
     if (!adminId) {
       alert('Error: Admin ID not found. Please log in again.');
@@ -180,8 +218,19 @@ const AdminHome: React.FC = () => {
     }
 
     setIsSubmitting(true);
+    setIsUploadingImage(true);
 
     try {
+      let imagePath = null;
+      
+      // Upload image if provided
+      if (newItemImage) {
+        imagePath = await uploadImage(newItemImage, newItemName);
+        if (!imagePath) {
+          alert('Failed to upload image. Item will be created without image.');
+        }
+      }
+
       const { error } = await supabase
         .from('menuItem')
         .insert([
@@ -189,7 +238,8 @@ const AdminHome: React.FC = () => {
             name: newItemName.trim(),
             price: price,
             category_id: selectedCategoryId,
-            admin_id: adminId // Include admin_id
+            admin_id: adminId,
+            image_url: imagePath
           }
         ])
         .select();
@@ -198,13 +248,12 @@ const AdminHome: React.FC = () => {
         throw error;
       }
 
-      // Refresh the menu data
       await refreshMenuData();
-
-      // Close modal and reset form
       setShowModal(false);
       setNewItemName('');
       setNewItemPrice('');
+      setNewItemImage(null);
+      setImagePreview('');
       alert('Item added successfully!');
 
     } catch (err: any) {
@@ -212,6 +261,7 @@ const AdminHome: React.FC = () => {
       alert(`Error adding item: ${err.message}`);
     } finally {
       setIsSubmitting(false);
+      setIsUploadingImage(false);
     }
   };
 
@@ -219,6 +269,8 @@ const AdminHome: React.FC = () => {
     setShowModal(false);
     setNewItemName('');
     setNewItemPrice('');
+    setNewItemImage(null);
+    setImagePreview('');
   };
 
   const handleDeleteItem = (item: MenuItem) => {
@@ -232,6 +284,19 @@ const AdminHome: React.FC = () => {
     setIsDeleting(true);
 
     try {
+      // Delete the image from storage if it exists
+      if (itemToDelete.image_url) {
+        const { error: storageError } = await supabase.storage
+          .from('bubbletimeimage')
+          .remove([itemToDelete.image_url]);
+        
+        if (storageError) {
+          console.error('Error deleting image from storage:', storageError);
+          // Continue with item deletion even if image deletion fails
+        }
+      }
+
+      // Delete the menu item from database
       const { error } = await supabase
         .from('menuItem')
         .delete()
@@ -333,6 +398,24 @@ const AdminHome: React.FC = () => {
     try {
       // First, delete all menu items in this category
       if (categoryToDelete.items.length > 0) {
+        // Collect all image URLs that need to be deleted
+        const imageUrls = categoryToDelete.items
+          .filter(item => item.image_url) // Only items with images
+          .map(item => item.image_url!); // Extract image URLs
+
+        // Delete images from storage if any exist
+        if (imageUrls.length > 0) {
+          const { error: storageError } = await supabase.storage
+            .from('bubbletimeimage')
+            .remove(imageUrls);
+          
+          if (storageError) {
+            console.error('Error deleting images from storage:', storageError);
+            // Continue with item deletion even if image deletion fails
+          }
+        }
+
+        // Then delete all menu items in this category
         const { error: itemsError } = await supabase
           .from('menuItem')
           .delete()
@@ -378,8 +461,10 @@ const AdminHome: React.FC = () => {
     setItemToUpdate(item);
     setUpdateItemName(item.name);
     setUpdateItemPrice(item.price.toString());
+    setUpdateItemImage(null);
+    setUpdateImagePreview(item.image_url ? getImageUrl(item.image_url) : '');
     setShowUpdateModal(true);
-  };
+  };  
 
   const handleSubmitUpdateItem = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -400,11 +485,29 @@ const AdminHome: React.FC = () => {
     setIsUpdating(true);
 
     try {
+      let imagePath = itemToUpdate.image_url; // Keep existing image by default
+      
+      // Upload new image if provided
+      if (updateItemImage) {
+        const newImagePath = await uploadImage(updateItemImage, updateItemName);
+        if (newImagePath) {
+          imagePath = newImagePath;
+          
+          // Delete old image if it exists
+          if (itemToUpdate.image_url) {
+            await supabase.storage
+              .from('bubbletimeimage')
+              .remove([itemToUpdate.image_url]);
+          }
+        }
+      }
+
       const { error } = await supabase
         .from('menuItem')
         .update({
           name: updateItemName.trim(),
-          price: price
+          price: price,
+          image_url: imagePath
         })
         .eq('id', itemToUpdate.id);
 
@@ -412,14 +515,13 @@ const AdminHome: React.FC = () => {
         throw error;
       }
 
-      // Refresh the menu data
       await refreshMenuData();
-
-      // Close modal and reset form
       setShowUpdateModal(false);
       setItemToUpdate(null);
       setUpdateItemName('');
       setUpdateItemPrice('');
+      setUpdateItemImage(null);
+      setUpdateImagePreview('');
       alert('Item updated successfully!');
 
     } catch (err: any) {
@@ -435,6 +537,8 @@ const AdminHome: React.FC = () => {
     setItemToUpdate(null);
     setUpdateItemName('');
     setUpdateItemPrice('');
+    setUpdateItemImage(null);
+    setUpdateImagePreview('');
   };
 
   return (
@@ -503,6 +607,31 @@ const AdminHome: React.FC = () => {
                     {category.items.map((item) => (
                       <div key={item.id} className="col-12 col-sm-6 col-md-4 col-lg-3">
                         <div className="card h-100 shadow-sm">
+                          {/* Image Section */}
+                          <div style={{ height: '200px', overflow: 'hidden' }}>
+                            {item.image_url ? (
+                              <img
+                                src={getImageUrl(item.image_url)}
+                                alt={item.name}
+                                className="card-img-top"
+                                style={{ 
+                                  height: '100%', 
+                                  width: '100%', 
+                                  objectFit: 'cover' 
+                                }}
+                              />
+                            ) : (
+                              <div 
+                                className="d-flex align-items-center justify-content-center bg-light"
+                                style={{ height: '100%' }}
+                              >
+                                <div className="text-center text-muted">
+                                  <i className="bi bi-image" style={{ fontSize: '2rem' }}></i>
+                                  <div className="small">No Image</div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                           <div className="card-body d-flex flex-column">
                             <div className="d-flex justify-content-between align-items-start mb-2">
                               <h5 className="card-title mb-0">{item.name}</h5>
@@ -604,6 +733,37 @@ const AdminHome: React.FC = () => {
                       required
                       disabled={isSubmitting}
                     />
+                  </div>
+                  <div className="mb-3">
+                    <label htmlFor="itemImage" className="form-label">Item Image (Optional)</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      id="itemImage"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setNewItemImage(file);
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (e) => setImagePreview(e.target?.result as string);
+                          reader.readAsDataURL(file);
+                        } else {
+                          setImagePreview('');
+                        }
+                      }}
+                      disabled={isSubmitting}
+                    />
+                    {imagePreview && (
+                      <div className="mt-2">
+                        <img 
+                          src={imagePreview} 
+                          alt="Preview" 
+                          style={{ maxHeight: '150px', maxWidth: '100%', objectFit: 'cover' }}
+                          className="img-thumbnail"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="modal-footer">
@@ -862,6 +1022,38 @@ const AdminHome: React.FC = () => {
                       required
                       disabled={isUpdating}
                     />
+                  </div>
+                  <div className="mb-3">
+                    <label htmlFor="updateItemImage" className="form-label">Update Image (Optional)</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      id="updateItemImage"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setUpdateItemImage(file);
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (e) => setUpdateImagePreview(e.target?.result as string);
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      disabled={isUpdating}
+                    />
+                    {updateImagePreview && (
+                      <div className="mt-2">
+                        <img 
+                          src={updateImagePreview} 
+                          alt="Preview" 
+                          style={{ maxHeight: '150px', maxWidth: '100%', objectFit: 'cover' }}
+                          className="img-thumbnail"
+                        />
+                        <div className="small text-muted mt-1">
+                          {updateItemImage ? 'New image selected' : 'Current image'}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="modal-footer">
