@@ -27,16 +27,16 @@ An administrative interface for managing the My Bubble Time Cafe menu items. Thi
 npm install
 ```
 ## Technologies Used
--Frontend Framework: React 19.1
--Build Tool: Vite 6.3
--UI Framework: Bootstrap 5.3 with React-Bootstrap
--Database: Supabase
--Authentication: Supabase Auth
--State Management: React Hooks
--Routing: React Router DOM 7.6
--TypeScript: Version 5.8
--Icons: Bootstrap Icons
--Development Tools:
--ESLint
--TypeScript ESLint
--React Refresh
+- **Frontend Framework: React 19.1**
+- **Build Tool: Vite 6.3**
+- **UI Framework: Bootstrap 5.3 with React-Bootstrap**
+- **Database: Supabase**
+- **Authentication: Supabase Auth**
+- **State Management: React Hooks**
+- **Routing: React Router DOM 7.6**
+- **TypeScript: Version 5.8**
+- **Icons: Bootstrap Icons**
+- **Development Tools:**
+  -ESLint
+  -TypeScript ESLint
+  -React Refresh
