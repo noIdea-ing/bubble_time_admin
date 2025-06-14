@@ -97,7 +97,6 @@ const getImageUrl = (imagePath: string | null): string => {
   const { data } = supabase.storage
     .from('bubbletimeimage')
     .getPublicUrl(imagePath);
-   console.log('Generated URL:', data.publicUrl);
   return data.publicUrl;
 };
 
@@ -136,18 +135,10 @@ const getImageUrl = (imagePath: string | null): string => {
             .sort((a, b) => a.name.localeCompare(b.name)) // Sort items by name ascending
         }));
 
-        // Debug logging to check the relationships
-        console.log('Categories:', categories);
-        console.log('Menu Items:', menuItems);
-        console.log('Categories with Items:', categoriesWithItemsData);
 
         // Don't filter out categories with no items - show all categories
         setCategoriesWithItems(categoriesWithItemsData);
-        
-        // Additional debugging
-        console.log('Final categories with items:', categoriesWithItemsData);
-        console.log('Total categories found:', categories.length);
-        console.log('Total menu items found:', menuItems.length);
+
         
       } catch (err: any) {
         console.error('Error fetching menu data:', err);
@@ -656,7 +647,7 @@ const getImageUrl = (imagePath: string | null): string => {
                             </div>
                             <div className="mt-auto">
                               <div className="d-flex justify-content-between align-items-center">
-                                <span className="h4 text-primary mb-0">RM{item.price}</span>
+                                <span className="h4 text-primary mb-0">RM{item.price.toFixed(2)}</span>
                               </div>
                             </div>
                           </div>
@@ -877,7 +868,7 @@ const getImageUrl = (imagePath: string | null): string => {
                       id="categoryName"
                       value={newCategoryName}
                       onChange={(e) => setNewCategoryName(e.target.value)}
-                      placeholder="Enter category name (e.g., Appetizers, Main Course, Desserts)"
+                      placeholder="Enter category name"
                       required
                       disabled={isSubmittingCategory}
                     />

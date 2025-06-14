@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import AdminHome from './pages/AdminHome'
 import Login from './pages/login'
-
+import Favourite from './pages/Favourite'
 // Define ProtectedRoute component
 const ProtectedRoute: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const isAuthenticated = !!sessionStorage.getItem('userId');
@@ -24,6 +24,15 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
           element={
             <ProtectedRoute>
               <AdminHome />
+            </ProtectedRoute>
+          }
+        />
+                
+        <Route
+          path="/favourite"
+          element={
+            <ProtectedRoute>
+              <Favourite />
             </ProtectedRoute>
           }
         />

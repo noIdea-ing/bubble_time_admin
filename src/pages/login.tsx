@@ -94,10 +94,61 @@ const Login = () => {
   };
 
   return (
-    <div className="container-fluid vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div 
+      className="container-fluid vh-100 d-flex align-items-center justify-content-center"
+      style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        position: 'relative'
+      }}
+    >
+      {/* Optional: Add some floating shapes for extra visual interest */}
+      <div 
+        style={{
+          position: 'absolute',
+          top: '10%',
+          left: '10%',
+          width: '100px',
+          height: '100px',
+          borderRadius: '50%',
+          background: 'rgba(255, 255, 255, 0.1)',
+          animation: 'float 6s ease-in-out infinite'
+        }}
+      ></div>
+      <div 
+        style={{
+          position: 'absolute',
+          top: '70%',
+          right: '15%',
+          width: '60px',
+          height: '60px',
+          borderRadius: '50%',
+          background: 'rgba(255, 255, 255, 0.1)',
+          animation: 'float 4s ease-in-out infinite reverse'
+        }}
+      ></div>
+      <div 
+        style={{
+          position: 'absolute',
+          bottom: '20%',
+          left: '20%',
+          width: '80px',
+          height: '80px',
+          borderRadius: '50%',
+          background: 'rgba(255, 255, 255, 0.08)',
+          animation: 'float 5s ease-in-out infinite'
+        }}
+      ></div>
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
+        }
+      `}</style>
+
       <div className="row w-100 justify-content-center">
         <div className="col-12 col-sm-8 col-md-6 col-lg-4">
-          <div className="card shadow">
+          <div className="card shadow-lg" style={{ backdropFilter: 'blur(10px)', background: 'rgba(255, 255, 255, 0.95)' }}>
             <div className="card-body p-4">
               <div className="text-center mb-4">
                 <h2 className="card-title h3 fw-bold text-dark">My Bubble Time</h2>
