@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate} from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 // Note: This code uses plain text password comparison which is NOT secure
 // In production, you should implement proper password hashing

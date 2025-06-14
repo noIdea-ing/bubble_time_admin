@@ -247,7 +247,7 @@ const Favourite: React.FC = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {favouriteData.map((item, index) => (
+                          {favouriteData.map((item) => (
                             <tr key={item.id}>
                               <td className="border-0">
                                 <div className="d-flex align-items-center">

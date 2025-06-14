@@ -58,7 +58,7 @@ const AdminHome: React.FC = () => {
   const [updateItemImage, setUpdateItemImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [updateImagePreview, setUpdateImagePreview] = useState<string>('');
-  const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
+  const [_isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
   // Helper function to get admin ID from session storage
   const getAdminId = (): string | null => {
     const userId = sessionStorage.getItem('userId');
